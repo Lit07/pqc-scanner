@@ -3,7 +3,8 @@ import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from db.database import get_db
-from db.models import Asset
+from db.models import Asset, ScanResult
+from sqlalchemy import func
 from backend.schemas.asset import AssetCreate, AssetResponse, AssetListResponse
 from backend.services.analysis_service import (
     get_all_assets,
@@ -16,6 +17,41 @@ from utils.logger import get_logger
 
 router = APIRouter(prefix="/assets", tags=["Assets"])
 logger = get_logger(__name__)
+
+@router.get("/heatmap")
+def get_quantum_heatmap(db: Session = Depends(get_db)):
+    subquery = db.query(
+        ScanResult.hostname, 
+        func.max(ScanResult.scanned_at).label("max_scanned_at")
+    ).group_by(ScanResult.hostname).subquery()
+    
+    latest_results = db.query(ScanResult).join(
+        subquery,
+        (ScanResult.hostname == subquery.c.hostname) & 
+        (ScanResult.scanned_at == subquery.c.max_scanned_at)
+    ).all()
+    
+    nodes = []
+    for r in latest_results:
+        # Generate some synthetic coordinates for visual clustering based on hndl score
+        x = hash(r.hostname) % 100
+        y = (hash(r.hostname) // 100) % 100
+        
+        nodes.append({
+            "id": r.id,
+            "hostname": r.hostname,
+            "ip": r.ip or "Unknown",
+            "type": r.endpoint_type or "Gateway",
+            "hndlScore": r.hndl_score or 50,
+            "hndlLevel": r.hndl_threat_level or "Elevated",
+            "pqcReady": r.pqc_tier == "Elite",
+            "grade": r.grade or "C",
+            "cryptoScore": r.final_score or 500,
+            "x": x,
+            "y": y
+        })
+        
+    return {"nodes": nodes}
 
 
 @router.get("", response_model=AssetListResponse)

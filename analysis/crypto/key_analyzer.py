@@ -1,6 +1,7 @@
 from utils.constants import CRYPTO_KNOWLEDGE_BASE, NIST_PQC_ALGORITHMS
 
 def analyze_key(key_type: str, key_size: int, curve_name: str = None) -> dict:
+    key_size = key_size or 0
     result = {
         "key_type": key_type,
         "key_size": key_size,

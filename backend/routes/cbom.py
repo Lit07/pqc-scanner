@@ -10,10 +10,90 @@ from backend.services.report_service import (
 from analysis.cbom.cbom_formatter import format_cbom_download
 from utils.logger import get_logger
 
+from db.models import ScanResult
+from sqlalchemy import func
+
 router = APIRouter(prefix="/cbom", tags=["CBOM"])
 logger = get_logger(__name__)
 
+@router.get("/stats/global")
+def get_global_cbom_stats(db: Session = Depends(get_db)):
+    subquery = db.query(
+        ScanResult.hostname, 
+        func.max(ScanResult.scanned_at).label("max_scanned_at")
+    ).group_by(ScanResult.hostname).subquery()
 
+    latest_results = db.query(ScanResult).join(
+        subquery,
+        (ScanResult.hostname == subquery.c.hostname) & 
+        (ScanResult.scanned_at == subquery.c.max_scanned_at)
+    ).all()
+    
+    total_apps = len(latest_results)
+    weak_crypto = sum(1 for r in latest_results if r.grade in ["D", "F"])
+    
+    key_lengths = {}
+    ciphers = {}
+    cas = {}
+    
+    for r in latest_results:
+        kname = f"{r.key_type}-{r.key_size}" if r.key_type else "Unknown"
+        key_lengths[kname] = key_lengths.get(kname, 0) + 1
+        
+        cname = r.cipher_name or "Unknown"
+        ciphers[cname] = ciphers.get(cname, 0) + 1
+        
+        ca = "Unknown"
+        if r.full_result and isinstance(r.full_result.get("certificate_chain"), list) and len(r.full_result.get("certificate_chain")) > 0:
+            cert = r.full_result.get("certificate_chain")[0]
+            if isinstance(cert.get("issuer"), dict):
+                ca = cert.get("issuer").get("O", "Unknown")
+            elif isinstance(cert.get("issuer"), str):
+                ca = cert.get("issuer")
+                
+        if "Google" in ca or "GTS" in ca: ca = "Google Trust Services"
+        elif "Let's Encrypt" in ca: ca = "Let's Encrypt"
+        elif "DigiCert" in ca: ca = "DigiCert"
+            
+        cas[ca] = cas.get(ca, 0) + 1
+        
+    records = []
+    for r in latest_results:
+        ca = "Unknown"
+        if r.full_result and isinstance(r.full_result.get("certificate_chain"), list) and len(r.full_result.get("certificate_chain")) > 0:
+            cert = r.full_result.get("certificate_chain")[0]
+            if isinstance(cert.get("issuer"), dict):
+                ca = cert.get("issuer").get("O", "Unknown")
+            elif isinstance(cert.get("issuer"), str):
+                ca = cert.get("issuer")
+                
+        pqc_status = "Quantum Resistant" if r.pqc_tier == "Elite" else "Non-Compliant" if r.pqc_tier in ["Legacy", "Critical"] else "At Risk"
+        risk_score = 100 - ((r.final_score or 0) // 10)
+        
+        records.append({
+            "id": r.id,
+            "asset": r.hostname,
+            "keyLength": f"{r.key_size}" if r.key_size else "Unknown",
+            "tlsVersion": r.tls_version or "Unknown",
+            "pqcStatus": pqc_status,
+            "riskScore": min(100, max(0, risk_score)),
+            "cipherSuite": r.cipher_name or "Unknown",
+            "ca": ca
+        })
+        
+    return {
+        "stats": {
+            "total_apps": total_apps,
+            "sites_surveyed": total_apps,
+            "active_certs": total_apps,
+            "weak_crypto": weak_crypto,
+            "cert_issues": sum(1 for r in latest_results if r.is_expired or r.is_self_signed)
+        },
+        "key_lengths": [{"name": k, "value": v} for k, v in key_lengths.items()],
+        "ciphers": [{"name": k, "value": v} for k, v in ciphers.items()],
+        "authorities": [{"name": k, "value": v} for k, v in cas.items()],
+        "cbomRecords": records
+    }
 @router.get("/{scan_id}")
 def get_cbom(scan_id: str, db: Session = Depends(get_db)):
     result = get_result_by_id(db, scan_id)

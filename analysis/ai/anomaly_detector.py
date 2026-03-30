@@ -202,8 +202,8 @@ def _calculate_trend(current_scan: dict, scan_history: list) -> str:
     if not scan_history or len(scan_history) < 2:
         return "INSUFFICIENT_DATA"
 
-    scores = [s.get("final_score", 0) for s in scan_history[-5:]]
-    scores.append(current_scan.get("final_score", 0))
+    scores = [(s.get("final_score") or 0) for s in scan_history[-5:]]
+    scores.append(current_scan.get("final_score") or 0)
 
     if len(scores) < 2:
         return "INSUFFICIENT_DATA"

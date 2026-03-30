@@ -178,7 +178,8 @@ def _build_interim_steps(key_type: str, scan_data: dict, path: dict) -> list:
             "description": "Required before hybrid PQC extensions can be deployed"
         })
 
-    if scan_data.get("key_type") == "RSA" and (scan_data.get("key_size") or 0) < 3072:
+    key_size = scan_data.get("key_size") or 0
+    if scan_data.get("key_type") == "RSA" and key_size < 3072:
         steps.append({
             "step": len(steps) + 1,
             "action": f"Replace RSA-{scan_data.get('key_size')} certificate with RSA-3072 as interim measure",
@@ -266,8 +267,12 @@ def _get_phase_steps(phase_id: str, scan_data: dict, key_type: str) -> list:
 def _build_full_migration_steps(key_type: str, scan_data: dict) -> list:
     steps = []
     step_num = 1
+    
+    days_to_expiry = scan_data.get("days_to_expiry")
+    if days_to_expiry is None:
+        days_to_expiry = 999
 
-    if scan_data.get("is_expired") or scan_data.get("days_to_expiry", 999) < 30:
+    if scan_data.get("is_expired") or days_to_expiry < 30:
         steps.append({
             "step": step_num,
             "action": "Renew certificate",

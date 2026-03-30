@@ -207,9 +207,20 @@ def _get_scan_history_data(db: Session, hostname: str, limit: int = 10) -> list:
 
 def _update_asset_record(db: Session, hostname: str, result: ScanResult):
     asset = db.query(Asset).filter(Asset.hostname == hostname).first()
-    if asset:
+    if not asset:
+        asset = Asset(
+            id=str(uuid.uuid4()),
+            hostname=hostname,
+            ip=result.ip,
+            last_scanned=datetime.datetime.now(datetime.timezone.utc),
+            latest_score=result.final_score,
+            latest_tier=result.pqc_tier
+        )
+        db.add(asset)
+    else:
         asset.ip = result.ip
         asset.last_scanned = datetime.datetime.now(datetime.timezone.utc)
         asset.latest_score = result.final_score
         asset.latest_tier = result.pqc_tier
-        db.commit()
+        
+    db.commit()
