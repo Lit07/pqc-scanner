@@ -1,0 +1,2 @@
+class NmapScanner:
+    pass
