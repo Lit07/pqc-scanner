@@ -143,6 +143,9 @@ def run_full_scan(
     result["status"] = "completed"
     result["completed_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
+    if "der_cert_bytes" in result["tls_scan"]:
+        del result["tls_scan"]["der_cert_bytes"]
+
     return result
 
 
