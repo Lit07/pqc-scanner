@@ -1,6 +1,7 @@
 import time
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from db.database import get_db
 
 router = APIRouter(prefix="/health", tags=["Health"])
@@ -12,7 +13,7 @@ _start_time = time.time()
 def health_check(db: Session = Depends(get_db)):
     db_connected = True
     try:
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
     except Exception:
         db_connected = False
 

@@ -1,0 +1,59 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pycache
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+*.egg
+*.whl
+
+# Test & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.xml
+
+# ── Environment / Secrets ─────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── SQLite / local databases ──────────────────────────────────────────────────
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# ── Logs & debug output ───────────────────────────────────────────────────────
+*.log
+out.txt
+error_trace.txt
+
+# ── Next.js / Node ────────────────────────────────────────────────────────────
+tmp_frontend/node_modules/
+tmp_frontend/.next/
+tmp_frontend/.vercel/
+tmp_frontend/next-env.d.ts
+
+# ── Local / do-not-push folders ───────────────────────────────────────────────
+learning/
+friend_code/
+data/
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
