@@ -35,7 +35,8 @@ def parse_cipher(cipher_name: str, tls_version: str, key_bits: int) -> dict:
         result["raw_components"] = _parse_cipher_string(cipher_name)
         result["forward_secrecy"] = cipher_name.startswith("ECDHE") or \
                                     cipher_name.startswith("DHE") or \
-                                    "ECDHE" in cipher_name
+                                    "ECDHE" in cipher_name or \
+                                    tls_version == "TLSv1.3"
         result["classical_vulnerable"] = any(w in cipher_name for w in [
             "DES", "RC4", "NULL", "EXPORT", "anon", "MD5"
         ])
