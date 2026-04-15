@@ -44,7 +44,7 @@ def get_quantum_heatmap(db: Session = Depends(get_db)):
             "type": r.endpoint_type or "Gateway",
             "hndlScore": r.hndl_score or 50,
             "hndlLevel": r.hndl_threat_level or "Elevated",
-            "pqcReady": r.pqc_tier == "Elite",
+            "pqcReady": r.pqc_classification == "Elite",
             "grade": r.grade or "C",
             "cryptoScore": r.final_score or 500,
             "x": x,
