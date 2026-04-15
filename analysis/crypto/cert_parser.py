@@ -66,7 +66,7 @@ def parse_cert(der_bytes: bytes) -> dict:
         result["key_type"] = "RSA"
         result["key_size"] = pub_key.key_size
 
-    elif isinstance(pub_key, ec.ECPublicKey):
+    elif isinstance(pub_key, ec.EllipticCurvePublicKey):
         result["key_type"] = "EC"
         result["key_size"] = pub_key.key_size
         result["curve_name"] = pub_key.curve.name
