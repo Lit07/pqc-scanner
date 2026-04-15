@@ -64,7 +64,7 @@ def get_global_cbom_stats(db: Session = Depends(get_db)):
         elif "Let's Encrypt" in ca: ca = "Let's Encrypt"
         elif "DigiCert" in ca: ca = "DigiCert"
                 
-        pqc_status = "Quantum Resistant" if r.pqc_tier == "Elite" else "Non-Compliant" if r.pqc_tier in ["Legacy", "Critical"] else "At Risk"
+        pqc_status = "Quantum Resistant" if r.pqc_classification == "Elite" else "Non-Compliant" if r.pqc_classification in ["Legacy", "Critical"] else "At Risk"
         risk_score = 100 - ((r.final_score or 0) // 10)
         
         records.append({
