@@ -18,6 +18,7 @@ class AssetResponse(BaseModel):
     latest_score: Optional[int]
     latest_tier: Optional[str]
     is_active: bool
+    cert_expiry_days: Optional[int] = None
 
 
 class AssetListResponse(BaseModel):

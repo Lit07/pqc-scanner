@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from db.models import ScanResult, ScanJob, TriggeredRule, CBOMEntry, Asset
 from analysis.risk.scoring import calculate_enterprise_score
 from utils.logger import get_logger
+import datetime
 
 logger = get_logger(__name__)
 
@@ -99,6 +100,7 @@ def get_pqc_posture_summary(db: Session) -> dict:
     tier_counts = {"Elite": 0, "Standard": 0, "Legacy": 0, "Critical": 0}
     key_type_dist = {}
     tls_version_dist = {}
+    detailed_assets = []
 
     for hostname, result in latest_per_host.items():
         tier = result.pqc_tier or "Critical"
@@ -111,6 +113,33 @@ def get_pqc_posture_summary(db: Session) -> dict:
         tv = result.tls_version or "Unknown"
         tls_version_dist[tv] = tls_version_dist.get(tv, 0) + 1
 
+        seconds = 157680000
+        if tier == "Critical":
+            seconds = 3888000
+        elif tier == "Legacy":
+            seconds = 63072000
+        elif tier == "Elite":
+            seconds = 864000000
+
+        full = result.full_result or {}
+        pqc = full.get("pqc_classification", {})
+        est_year = pqc.get("estimated_quantum_risk_year")
+        if est_year:
+            try:
+                days_left = (datetime.datetime(est_year, 1, 1).timestamp() - datetime.datetime.now().timestamp())
+                if days_left > 0:
+                    seconds = int(days_left)
+            except Exception:
+                pass
+
+        detailed_assets.append({
+            "id": result.id,
+            "name": hostname,
+            "tier": tier,
+            "cipher": result.cipher_name or "Unknown",
+            "quantumClockSeconds": seconds
+        })
+
     pqc_ready = tier_counts.get("Elite", 0)
     pqc_ready_pct = (pqc_ready / total * 100) if total > 0 else 0.0
 
@@ -122,7 +151,8 @@ def get_pqc_posture_summary(db: Session) -> dict:
         "critical_count": tier_counts["Critical"],
         "pqc_ready_percentage": round(pqc_ready_pct, 2),
         "key_type_distribution": key_type_dist,
-        "tls_version_distribution": tls_version_dist
+        "tls_version_distribution": tls_version_dist,
+        "detailed_assets": detailed_assets
     }
 
 

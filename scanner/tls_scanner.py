@@ -19,7 +19,9 @@ def scan_tls(hostname: str, port: int = 443) -> dict:
         "key_size": None,
         "key_type": None,
         "san": [],
-        "error": None
+        "error": None,
+        "der_cert_bytes": None,
+        "is_reachable": False
     }
 
     try:
@@ -39,6 +41,8 @@ def scan_tls(hostname: str, port: int = 443) -> dict:
             result["cipher_bits"] = cipher[2]
 
             der_cert = tls.getpeercert(binary_form=True)
+            result["der_cert_bytes"] = der_cert
+            result["is_reachable"] = True
 
         cert = x509.load_der_x509_certificate(der_cert, default_backend())
 

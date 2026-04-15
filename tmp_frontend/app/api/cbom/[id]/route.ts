@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
 
 export async function GET(
@@ -9,34 +11,24 @@ export async function GET(
   const { id } = await context.params;
 
   try {
-    // To make the demo robust, regardless of the ID, we'll fetch all live assets
-    // from your real backend database rather than hardcoded mock strings!
-    const res = await fetch(`${BACKEND_URL}/api/v1/assets`, { cache: 'no-store' });
-    if (!res.ok) throw new Error("Could not load assets from backend");
+    // Fetch the real analytical aggregate from backend, replacing placeholder mocks
+    const res = await fetch(`${BACKEND_URL}/api/v1/cbom/stats/global`, { cache: 'no-store' });
+    if (!res.ok) throw new Error("Could not load CBOM stats from backend");
     
-    const assetsData = await res.json();
-    const assetsList = assetsData.assets || [];
+    const cbomData = await res.json();
+    const records = cbomData.cbomRecords || [];
 
-    // If the database is completely empty, fallback slightly so the UI doesn't crash
-    if (assetsList.length === 0) {
+    if (records.length === 0) {
       return NextResponse.json({
          scan_id: id,
          cbomRecords: [{ id: "empty-01", asset: "No Assets Scanned Yet", keyLength: "-", cipherSuite: "-", tlsVersion: "-", ca: "-", pqcStatus: "-", riskScore: 0, statusKey: "Empty" }]
       });
     }
 
-    // Map your real live python assets to the UI Table
-    const mappedRecords = assetsList.map((asset: any) => ({
-      id: asset.id,
-      asset: asset.hostname,
-      keyLength: asset.latest_tier === 'Legacy' ? "RSA-2048" : "Unknown", // we'd need full join for real keys, but this is good enough for list
-      cipherSuite: "TLS_AES_256_GCM_SHA384",
-      tlsVersion: "TLS 1.3",
-      ca: asset.owner || "External",
-      pqcStatus: asset.latest_tier === 'Elite' ? "Quantum Resistant" : 
-                 asset.latest_tier === 'Legacy' ? "Non-Compliant" : "Transitional",
-      riskScore: asset.latest_score || 50,
-      statusKey: asset.latest_score > 75 ? "Critical" : "Healthy"
+    const mappedRecords = records.map((r: any) => ({
+      ...r,
+      // Status key calculates healthy thresholds for UI colors
+      statusKey: r.riskScore > 75 ? "Healthy" : (r.riskScore < 50 ? "Critical" : "Standard")
     }));
 
     return NextResponse.json({

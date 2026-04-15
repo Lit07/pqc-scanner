@@ -19,7 +19,7 @@ export async function GET() {
       ip: a.ip || "Unknown",
       riskTier: a.latest_tier || "Standard",
       pqcReady: a.latest_tier === 'Elite',
-      certValidDays: 90 // Approximated since assets list doesn't return cert details currently
+      certValidDays: a.cert_expiry_days !== null && a.cert_expiry_days !== undefined ? a.cert_expiry_days : "Unknown"
     }));
 
     return NextResponse.json({

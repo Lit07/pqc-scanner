@@ -65,16 +65,18 @@ def list_assets(
 
     items = []
     for a in assets:
+        latest_scan = db.query(ScanResult).filter(ScanResult.hostname == a.hostname).order_by(ScanResult.scanned_at.desc()).first()
         items.append(AssetResponse(
             id=a.id,
             hostname=a.hostname,
-            ip=a.ip,
+            ip=a.ip or (latest_scan.ip if latest_scan else None),
             asset_type=a.asset_type,
             owner=a.owner,
             last_scanned=a.last_scanned.isoformat() if a.last_scanned else None,
             latest_score=a.latest_score,
             latest_tier=a.latest_tier,
-            is_active=a.is_active
+            is_active=a.is_active,
+            cert_expiry_days=latest_scan.days_to_expiry if latest_scan else None
         ))
 
     return AssetListResponse(total=total, assets=items)
@@ -127,16 +129,18 @@ def get_asset(asset_id: str, db: Session = Depends(get_db)):
     if not asset:
         raise HTTPException(status_code=404, detail=f"Asset {asset_id} not found")
 
+    latest_scan = db.query(ScanResult).filter(ScanResult.hostname == asset.hostname).order_by(ScanResult.scanned_at.desc()).first()
     return AssetResponse(
         id=asset.id,
         hostname=asset.hostname,
-        ip=asset.ip,
+        ip=asset.ip or (latest_scan.ip if latest_scan else None),
         asset_type=asset.asset_type,
         owner=asset.owner,
         last_scanned=asset.last_scanned.isoformat() if asset.last_scanned else None,
         latest_score=asset.latest_score,
         latest_tier=asset.latest_tier,
-        is_active=asset.is_active
+        is_active=asset.is_active,
+        cert_expiry_days=latest_scan.days_to_expiry if latest_scan else None
     )
 
 
