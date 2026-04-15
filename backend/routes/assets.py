@@ -76,7 +76,8 @@ def list_assets(
             latest_score=a.latest_score,
             latest_tier=a.latest_tier,
             is_active=a.is_active,
-            cert_expiry_days=latest_scan.days_to_expiry if latest_scan else None
+            cert_expiry_days=latest_scan.days_to_expiry if latest_scan else None,
+            latest_pqc_classification=latest_scan.pqc_classification if latest_scan else None
         ))
 
     return AssetListResponse(total=total, assets=items)
@@ -119,7 +120,8 @@ def create_asset(request: AssetCreate, db: Session = Depends(get_db)):
         last_scanned=None,
         latest_score=asset.latest_score,
         latest_tier=asset.latest_tier,
-        is_active=asset.is_active
+        is_active=asset.is_active,
+        latest_pqc_classification=None
     )
 
 
@@ -140,7 +142,8 @@ def get_asset(asset_id: str, db: Session = Depends(get_db)):
         latest_score=asset.latest_score,
         latest_tier=asset.latest_tier,
         is_active=asset.is_active,
-        cert_expiry_days=latest_scan.days_to_expiry if latest_scan else None
+        cert_expiry_days=latest_scan.days_to_expiry if latest_scan else None,
+        latest_pqc_classification=latest_scan.pqc_classification if latest_scan else None
     )
 
 

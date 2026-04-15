@@ -19,6 +19,7 @@ class AssetResponse(BaseModel):
     latest_tier: Optional[str]
     is_active: bool
     cert_expiry_days: Optional[int] = None
+    latest_pqc_classification: Optional[str] = None
 
 
 class AssetListResponse(BaseModel):
