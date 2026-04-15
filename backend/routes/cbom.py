@@ -44,28 +44,25 @@ def get_global_cbom_stats(db: Session = Depends(get_db)):
         ciphers[cname] = ciphers.get(cname, 0) + 1
         
         ca = "Unknown"
-        if r.full_result and isinstance(r.full_result.get("certificate_chain"), list) and len(r.full_result.get("certificate_chain")) > 0:
-            cert = r.full_result.get("certificate_chain")[0]
-            if isinstance(cert.get("issuer"), dict):
-                ca = cert.get("issuer").get("O", "Unknown")
-            elif isinstance(cert.get("issuer"), str):
-                ca = cert.get("issuer")
-                
+        if r.full_result:
+            cert_data = r.full_result.get("cert_analysis", {})
+            ca = cert_data.get("issuer_org") or cert_data.get("issuer_cn") or "Unknown"
+
         if "Google" in ca or "GTS" in ca: ca = "Google Trust Services"
         elif "Let's Encrypt" in ca: ca = "Let's Encrypt"
         elif "DigiCert" in ca: ca = "DigiCert"
-            
+
         cas[ca] = cas.get(ca, 0) + 1
         
     records = []
     for r in latest_results:
         ca = "Unknown"
-        if r.full_result and isinstance(r.full_result.get("certificate_chain"), list) and len(r.full_result.get("certificate_chain")) > 0:
-            cert = r.full_result.get("certificate_chain")[0]
-            if isinstance(cert.get("issuer"), dict):
-                ca = cert.get("issuer").get("O", "Unknown")
-            elif isinstance(cert.get("issuer"), str):
-                ca = cert.get("issuer")
+        if r.full_result:
+            cert_data = r.full_result.get("cert_analysis", {})
+            ca = cert_data.get("issuer_org") or cert_data.get("issuer_cn") or "Unknown"
+        if "Google" in ca or "GTS" in ca: ca = "Google Trust Services"
+        elif "Let's Encrypt" in ca: ca = "Let's Encrypt"
+        elif "DigiCert" in ca: ca = "DigiCert"
                 
         pqc_status = "Quantum Resistant" if r.pqc_tier == "Elite" else "Non-Compliant" if r.pqc_tier in ["Legacy", "Critical"] else "At Risk"
         risk_score = 100 - ((r.final_score or 0) // 10)
