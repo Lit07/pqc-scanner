@@ -74,6 +74,9 @@ def classify_pqc_posture(scan_data: dict, der_cert_bytes: bytes = None) -> dict:
         result["harvest_risk_rules"] = []
         result["immediate_actions"] = []
         result["hybrid_mode_possible"] = True
+    else:
+        # Cap classical endpoints at 79 (Standard) so they are never falsely labeled Elite
+        pqc_score = min(79, pqc_score)
         
     result["pqc_score"] = pqc_score
 
@@ -93,7 +96,7 @@ def classify_pqc_posture(scan_data: dict, der_cert_bytes: bytes = None) -> dict:
         result["nist_replacements"] = key_analysis.get("nist_replacements", [])
 
     result["quantum_attack_vectors"] = _extract_attack_vectors(triggered)
-    result["pqc_ready"] = pqc_score >= 80 and len(triggered) == 0
+    result["pqc_ready"] = pqc_score >= 80 and scan_data.get("hybrid_mode_supported", False)
     result["hybrid_mode_possible"] = scan_data.get("tls_version") == "TLSv1.3"
     result["estimated_quantum_risk_year"] = _estimate_quantum_risk_year(
         key_type,
