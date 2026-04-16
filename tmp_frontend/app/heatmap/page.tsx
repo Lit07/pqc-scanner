@@ -155,7 +155,7 @@ export default function HeatmapPage() {
                     <ShieldAlert className="w-4 h-4" /> Critical Exposure
                   </div>
                   <p className="text-xs text-red-600/80 dark:text-red-400/80 font-semibold leading-relaxed">
-                    This endpoint lacks forward secrecy and is highly susceptible to intelligence harvesting. Migrate to Hybrid PQC immediately.
+                    This endpoint is highly susceptible to intelligence harvesting and Harvest Now, Decrypt Later attacks. Migrate to Hybrid PQC immediately.
                   </p>
                 </div>
               )}
