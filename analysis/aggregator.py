@@ -16,6 +16,7 @@ from analysis.ai.recommendation_engine import generate_recommendations
 from analysis.ai.risk_explainer import explain_risk
 from analysis.pqc.cipher_regression import detect_cipher_regression
 from analysis.cbom.cbom_builder import build_cbom
+from analysis.crypto.raw_pqc_prober import scan_pqc_hybrid_support
 
 
 def run_full_scan(
@@ -85,7 +86,9 @@ def run_full_scan(
         )
         result["key_analysis"] = key_data
 
-    combined = _build_combined(tls_result, cert_data, cipher_data, key_data)
+    raw_probe_result = scan_pqc_hybrid_support(hostname, port)
+
+    combined = _build_combined(tls_result, cert_data, cipher_data, key_data, raw_probe_result)
 
     risk_result = run_risk_engine(tls_result, der_bytes)
     result["risk_engine"] = risk_result
@@ -160,7 +163,8 @@ def _build_combined(
     tls: dict,
     cert: dict,
     cipher: dict,
-    key: dict
+    key: dict,
+    raw_probe: dict
 ) -> dict:
     return {
         "hostname": tls.get("hostname"),
@@ -189,7 +193,9 @@ def _build_combined(
         "priority_score": key.get("priority_score"),
         "nist_replacements": key.get("nist_replacements", []),
         "final_score": None,
-        "scanned_at": tls.get("scanned_at")
+        "scanned_at": tls.get("scanned_at"),
+        "hybrid_mode_supported": raw_probe.get("hybrid_mode_supported", False),
+        "negotiated_group": raw_probe.get("negotiated_group")
     }
 
 

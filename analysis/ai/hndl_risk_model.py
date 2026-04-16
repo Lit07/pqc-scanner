@@ -37,12 +37,9 @@ def assess_hndl_risk(scan_data: dict, endpoint_classification: dict = None) -> d
 
     factors = []
     base_score = 0
-    
-    # --- HYBRID PQC EARLY ADOPTER HEURISTIC SENSING ---
-    hostname = scan_data.get("hostname", "").lower() if scan_data.get("hostname") else ""
-    is_early_adopter = any(d in hostname for d in ["google.com", "cloudflare.com", "youtube.com", "vercel.app", "riotgames.com", "sbi.bank.in"])
-    
-    if is_early_adopter and scan_data.get("tls_version") == "TLSv1.3":
+    # --- HARDWARE-LEVEL HYBRID PQC SENSING ---
+    if scan_data.get("hybrid_mode_supported"):
+        hostname = scan_data.get("hostname", "")
         result["hndl_score"] = 15
         result["adjusted_hndl_score"] = 15
         result["hndl_threat_level"] = "MINIMAL"
